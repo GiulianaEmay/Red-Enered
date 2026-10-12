@@ -176,7 +176,7 @@ export default function DashboardSubsidioView() {
           {refreshing ? "Actualizando..." : "Actualizar"}
         </button>
         <button
-          onClick={() => navigate("/subsidio/documentos")}
+          onClick={() => navigate("/subsidio/du007?etapa=combustible")}
           className="px-4 py-2 bg-brand hover:bg-brand-hover text-white text-sm font-bold rounded-lg flex items-center gap-2"
           data-testid="dashboard-subsidio-cta-expediente"
         >
@@ -230,7 +230,7 @@ export default function DashboardSubsidioView() {
             </p>
           </div>
           <button
-            onClick={() => navigate("/subsidio/documentos")}
+            onClick={() => navigate("/subsidio/du007?etapa=combustible")}
             className="px-4 py-2 bg-brand hover:bg-brand-hover text-white text-sm font-bold rounded-lg flex items-center gap-2 flex-shrink-0"
             data-testid="dashboard-empty-banner-cta"
           >
@@ -771,7 +771,7 @@ function DocsSemaforoCard({ semaforo, navigate }) {
                 <div className="mt-2 text-xs text-neutral-600">
                   {d.status === "missing" ? (
                     <button
-                      onClick={() => navigate("/subsidio/documentos")}
+                      onClick={() => navigate(`/subsidio/du007?etapa=${d.placa ? "flota" : "empresa"}`)}
                       className="text-brand font-bold hover:underline"
                       data-testid={`semaforo-upload-${d.categoria}`}
                     >

@@ -181,7 +181,7 @@ export default function SubsidioVerificar() {
   return (
     <div className="space-y-6" data-testid="subsidio-verificar">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate("/subsidio/documentos")} className="p-2 hover:bg-neutral-100 rounded-lg" data-testid="verificar-back">
+        <button onClick={() => navigate("/subsidio/du007")} className="p-2 hover:bg-neutral-100 rounded-lg" data-testid="verificar-back">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex-1">

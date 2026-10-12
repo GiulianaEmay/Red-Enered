@@ -26,7 +26,8 @@ export default function ConstanciaModal() {
   // No mostrar el comunicado en páginas públicas / de acceso (login, registro, landing…).
   const RUTAS_PUBLICAS = ["/login", "/forgot-password", "/registro-subsidio", "/subsidio", "/precios", "/privacidad"];
   const enPublica = RUTAS_PUBLICAS.includes(loc.pathname) || loc.pathname.startsWith("/captura/");
-  const visible = !!(user && user.constancia_pendiente) && !enPublica;
+  // El módulo cerrado muestra primero su aviso; la constancia sigue exigida en DU-007.
+  const visible = !!(user && user.constancia_pendiente) && !enPublica && loc.pathname !== "/subsidio/documentos";
 
   // Al abrirse, trae los datos del cliente (representante legal, DNI) para rellenar el preámbulo.
   useEffect(() => {

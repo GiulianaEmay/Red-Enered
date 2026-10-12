@@ -34,15 +34,15 @@ export default function PortadaShell({ children }) {
         <div className="sp-logo"><b>ENERED</b><em>Soluciones en Energías</em></div>
 
         <div className="sp-decrees">
-          <span className="sp-dec"><i /><b>D.U. 004-2026</b> · cierra el 28 de setiembre</span>
+          <span className="sp-dec"><i /><b>D.U. 004-2026</b> · finalizado</span>
           <span className="sp-dec sp-live"><i /><b>D.U. 007-2026</b> · consumo corriendo ahora</span>
         </div>
 
         <h1 className="sp-h1">¡Consolida tu expediente,<br />cobra tu subsidio y optimiza tu flota!</h1>
-        <span className="sp-kick">Hay dos subsidios abiertos y un solo lugar donde tener todo listo</span>
+        <span className="sp-kick">Recupera tu subsidio con el D.U. 007 y ten todo listo en un solo lugar</span>
         <p className="sp-lead">
-          Ingresa tu RUC y en 10 segundos sabes cuánto te toca en el D.U. 004 y en cada periodo
-          del D.U. 007, qué unidades califican y qué te falta para cobrar.
+          Ingresa tu RUC y en 10 segundos sabes cuánto te toca en cada periodo del D.U. 007,
+          qué unidades califican y qué te falta para cobrar.
         </p>
 
         <div className="sp-ring-wrap">

@@ -6,9 +6,9 @@ import { useAuth } from "../context/AuthContext";
 import { rutaFirmaPendiente } from "./FirmasPendientes";
 
 /* Emergente OBLIGATORIO (Giuliana, 25/09/2026): un cliente de subsidio con facturas cargadas y
-   la declaración jurada sin firmar (DU 004, o DU 007 por periodo) no puede usar la plataforma
+   la constancia sin firmar no puede usar la plataforma
    hasta firmar — así se asegura el envío de su expediente y la responsabilidad queda declarada.
-   Solo se oculta en las páginas donde se firma (DU 004 / DU 007), en las públicas y para el
+   Solo se oculta donde se firma (DU 007), en el aviso de cierre DU 004, en las públicas y para el
    admin o cuando impersona. Re-verifica en cada cambio de ruta. */
 const RUTAS_FIRMA = ["/subsidio/documentos", "/subsidio/du007"];
 const RUTAS_PUBLICAS = ["/login", "/forgot-password", "/registro-subsidio", "/subsidio", "/precios", "/privacidad"];
@@ -42,8 +42,8 @@ export default function FirmaObligatoriaModal() {
   // ya cargaron facturas. Las declaraciones juradas de veracidad son recomendadas, no bloquean.
   if (firmas.constancia || !firmas.tiene_facturas) return null;
   const items = ["Constancia de Información y Condiciones del Servicio (obligatoria)"];
-  for (const k of (firmas.dj_pendientes || [])) items.push(k === "du004" ? "Declaración jurada DU 004 (recomendada)" : `Declaración jurada DU 007 · Periodo ${k.replace("du007_p", "")} (recomendada)`);
-  const destino = rutaFirmaPendiente(firmas) || "/subsidio/documentos?etapa=declaracion";
+  for (const k of (firmas.dj_pendientes || []).filter((k) => k !== "du004")) items.push(`Declaración jurada DU 007 · Periodo ${k.replace("du007_p", "")} (recomendada)`);
+  const destino = rutaFirmaPendiente(firmas) || "/subsidio/du007?etapa=declaracion";
 
   return (
     <div className="fixed inset-0 z-[85] bg-neutral-900/70 backdrop-blur-sm flex items-center justify-center p-4" data-testid="firma-obligatoria">

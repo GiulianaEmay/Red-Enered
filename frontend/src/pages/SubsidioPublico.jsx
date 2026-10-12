@@ -6,7 +6,7 @@ import EmayFooter from "../components/EmayFooter";
 import PortadaShell from "../components/PortadaShell";
 
 const VERAS = [
-  <><b>Tu monto máximo</b> en el D.U. 004 y en cada periodo del D.U. 007</>,
+  <><b>Tu monto máximo</b> en cada periodo del D.U. 007</>,
   <><b>Placa por placa:</b> cuáles califican, cuáles son regularizables y cuáles no aplican</>,
   <><b>Los días exactos</b> que te quedan en cada ventana de presentación</>,
 ];
@@ -22,7 +22,7 @@ export default function SubsidioPublico() {
   // ?ver=1 fuerza mostrar la página pública aunque haya sesión de cliente activa
   // (útil para el equipo ENERED al demostrar el diagnóstico sin cerrar sesión).
   const forzarVista = new URLSearchParams(window.location.search).get("ver") === "1";
-  if (!forzarVista && user && user.role === "cliente_subsidio" && !user.es_guest) return <Navigate to="/subsidio/documentos" replace />;
+  if (!forzarVista && user && user.role === "cliente_subsidio" && !user.es_guest) return <Navigate to="/subsidio/du007" replace />;
 
   async function consultar() {
     const r = ruc.trim();

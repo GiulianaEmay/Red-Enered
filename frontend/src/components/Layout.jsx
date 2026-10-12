@@ -29,11 +29,11 @@ const MODULOS_OPCIONALES = ["Analytics BI", "Mantenimiento", "Checklist", "Infra
 const MENU = [
   {
     label: "Subsidios", icon: FolderCheck, roles: ["cliente_subsidio"], testid: "nav-subsidios",
-    // Clic en el grupo → abre directo el DU-004 (el 007 aún no está activo); la flecha despliega.
-    clickTo: "/subsidio/documentos",
+    // El grupo abre el programa vigente; la flecha despliega ambos decretos.
+    clickTo: "/subsidio/du007",
     submenu: [
       { to: "/subsidio/diagnostico", label: "Diagnóstico", testid: "nav-diagnostico" },
-      { to: "/subsidio/documentos", label: "DU - 004", testid: "nav-du004", badge: "POR VENCER", badgeColor: "amber" },
+      { to: "/subsidio/documentos", label: "DU - 004", testid: "nav-du004", badge: "FINALIZADO", badgeColor: "amber" },
       { to: "/subsidio/du007", label: "DU - 007", testid: "nav-du007", badge: "NUEVO", badgeColor: "cyan" },
     ],
   },
@@ -165,7 +165,7 @@ function SidebarLink({ item, onClick, isCollapsed }) {
       <div>
         <button
           onClick={() => {
-            // Con clickTo, el clic en el grupo navega directo (p. ej. Subsidios → DU-004);
+            // Con clickTo, el clic en el grupo navega directo (Subsidios → DU-007);
             // la flecha es la que despliega/contrae. Sin clickTo, el clic solo despliega.
             if (item.clickTo) { setExpanded(true); navigate(item.clickTo); onClick?.(); }
             else setExpanded(!expanded);
@@ -299,7 +299,7 @@ export default function Layout({ children }) {
   // Cliente de subsidio (entra por enered.netlify.app/subsidio con su RUC): solo ve su Mi Flota
   // y los módulos del expediente. El resto del menú NO aparece. Estos aparecen pero bloqueados
   // (salvo Mi Flota, que es su vista de aterrizaje / Etapa 0).
-  const SUBSIDIO_VISIBLES = ["/subsidio/documentos", "/flotas", "/facturacion", "/vehiculos", "/documentacion"];
+  const SUBSIDIO_VISIBLES = ["/subsidio/documentos", "/subsidio/du007", "/flotas", "/facturacion", "/vehiculos", "/documentacion"];
 
   const items = MENU.filter((i) => {
     // Permisos por módulo (equipo ENERED): si el admin tiene una lista de permisos,
@@ -316,7 +316,7 @@ export default function Layout({ children }) {
     }
 
     // El grupo "Subsidios" también aplica a usuarios de empresas de subsidio con otro rol
-    // (p.ej. administrador con plan Tracking): su vista principal es el expediente DU-004.
+    // (p.ej. administrador con plan Tracking): su vista principal es el expediente DU-007.
     const esEmpresaSubsidio = user?.tipo_cliente === "subsidio" || !!user?.servicios?.subsidio;
     if (!i.roles.includes(user.role) && !(i.testid === "nav-subsidios" && esEmpresaSubsidio)) {
       // "Mi Flota" también accesible si la empresa tiene servicios.subsidio activo
@@ -499,7 +499,7 @@ export default function Layout({ children }) {
                 onClick={async () => {
                   const eff = await enterEmpresa(chooserEmpresa); setShowChooser(false);
                   const esSubsidio = eff?.role === "cliente_subsidio" || eff?.tipo_cliente === "subsidio";
-                  window.location.assign(esSubsidio ? "/subsidio/documentos" : "/dashboard");
+                  window.location.assign(esSubsidio ? "/subsidio/du007" : "/dashboard");
                 }}
                 className="flex-shrink-0 px-5 h-11 bg-brand hover:bg-brand-hover text-white font-bold rounded-lg text-sm disabled:opacity-50 transition-colors"
                 data-testid="chooser-entrar">Entrar</button>
@@ -586,7 +586,7 @@ export default function Layout({ children }) {
                   await enterEmpresa(e.target.value);
                   // Recarga completa: así TODOS los módulos vuelven a pedir datos con la
                   // nueva empresa (navigate() no remonta si ya estás en la misma ruta).
-                  window.location.assign("/subsidio/documentos");
+                  window.location.assign("/subsidio/du007");
                 }}
                 title="Cambiar de empresa"
                 data-testid="header-empresa-switch"

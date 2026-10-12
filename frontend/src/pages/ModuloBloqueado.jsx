@@ -65,7 +65,7 @@ export default function ModuloBloqueado({
 
         {isSubsidio ? (
           <button
-            onClick={() => navigate(ctaTo || "/subsidio/documentos")}
+            onClick={() => navigate(ctaTo || "/subsidio/du007")}
             className="w-full bg-brand hover:bg-brand-hover text-white font-bold py-3.5 px-6 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-brand/20"
             data-testid="modulo-bloqueado-cta"
           >

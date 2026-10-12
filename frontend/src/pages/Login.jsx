@@ -22,16 +22,14 @@ export default function Login() {
     try {
       const u = await login(email, password);
       // Clientes de subsidio (por rol o por tipo de cliente de su empresa): la primera
-      // vista es SIEMPRE el expediente DU-004, para que completen sus datos.
+      // vista es el expediente vigente DU-007, reutilizando sus datos de empresa y flota.
       if (u?.role === "cliente_subsidio" || u?.tipo_cliente === "subsidio") {
-        // Si el DU 004 ya está firmado pero falta la DJ del DU 007, se aterriza en el DU 007
-        // (son dos declaraciones distintas; antes siempre caía en el 004 y el 007 quedaba sin firmar).
-        let destino = "/subsidio/documentos";
+        let destino = "/subsidio/du007";
         try {
           const { data: f } = await api.get("/subsidio/firmas");
           // Con firmas pendientes se aterriza DIRECTO en la etapa de Declaración del decreto que falta.
           destino = rutaFirmaPendiente(f) || destino;
-        } catch (_) { /* sin datos → DU 004 */ }
+        } catch (_) { /* sin datos → DU 007 */ }
         navigate(destino);
       } else {
         navigate("/dashboard");

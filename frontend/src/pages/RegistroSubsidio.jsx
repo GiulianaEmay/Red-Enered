@@ -126,7 +126,7 @@ export default function RegistroSubsidio() {
       });
       if (data.access_token) localStorage.setItem("enered_token", data.access_token);
       setUser(data.user);
-      navigate("/subsidio/documentos", { replace: true });
+      navigate("/subsidio/du007", { replace: true });
     } catch (e2) {
       setError(e2?.response?.data?.detail || "No se pudo crear la cuenta. Revisa los campos e intenta nuevamente.");
     } finally {
@@ -179,18 +179,18 @@ export default function RegistroSubsidio() {
           </div>
 
           <div className="bg-gradient-to-br from-brand to-brand-hover text-white rounded-2xl p-5 mb-7 shadow-md">
-            <div className="text-[10px] uppercase tracking-widest opacity-80 font-bold">Tu subsidio recuperable</div>
+            <div className="text-[10px] uppercase tracking-widest opacity-80 font-bold">Tu estimación anterior · DU-004 finalizado</div>
             <div className="font-cabinet text-4xl font-bold mt-1 leading-tight">
               S/ {Number(calc.subsidio_estimado || 0).toLocaleString("es-PE", { maximumFractionDigits: 0 })}
             </div>
-            <div className="text-xs opacity-90 mt-1">DU 004-2026 · Junio + Julio 2026</div>
+            <div className="text-xs opacity-90 mt-1">DU 004-2026 · Periodo finalizado · Continúa con el DU-007</div>
           </div>
 
           <h1 className="text-brand text-3xl md:text-4xl font-bold font-cabinet mb-2" style={{ letterSpacing: "-0.01em" }}>
             Crea tu cuenta
           </h1>
           <p className="text-neutral-600 text-sm mb-7">
-            Para continuar con el expediente DU 004-2026 necesitamos los datos de tu empresa.
+            Para continuar con el expediente DU 007-2026 necesitamos los datos de tu empresa. Su verificación y la de tu flota se realizan una sola vez.
           </p>
 
           <form onSubmit={submit} className="space-y-4" data-testid="registro-subsidio-form" noValidate>

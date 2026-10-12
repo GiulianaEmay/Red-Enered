@@ -56,7 +56,7 @@ import Neumaticos from "./pages/Neumaticos";
 import Infracciones from "./pages/Infracciones";
 import Vehiculos from "./pages/Vehiculos";
 import RegistroSubsidio from "./pages/RegistroSubsidio";
-import SubsidioDocumentos from "./pages/SubsidioDocumentos";
+import SubsidioDU004Finalizado from "./pages/SubsidioDU004Finalizado";
 import SubsidioVerificar from "./pages/SubsidioVerificar";
 import SubsidioFinalizado from "./pages/SubsidioFinalizado";
 import SubsidioAdmin from "./pages/SubsidioAdmin";
@@ -101,11 +101,11 @@ function DashboardRouter() {
   return <Dashboard />;
 }
 
-/** Redirección raíz: cliente de subsidio → Mi Flota (su vista principal); el resto → Dashboard. */
+/** Redirección raíz: cliente de subsidio → DU-007; el resto → Dashboard. */
 function RootRedirect() {
   const { user } = useAuth();
   if (user?.role === "cliente_subsidio" || user?.tipo_cliente === "subsidio") {
-    return <Navigate to="/subsidio/documentos" replace />;
+    return <Navigate to="/subsidio/du007" replace />;
   }
   return <Navigate to="/dashboard" replace />;
 }
@@ -140,7 +140,7 @@ function App() {
           {/* Subsidio: páginas DENTRO del Shell (sidebar visible) y NO gateadas */}
           <Route path="/subsidio/diagnostico" element={<Shell roles={["admin_enered", "cliente_subsidio", "administrador", "logistica", "contabilidad"]}><SubsidioDiagnostico /></Shell>} />
           <Route path="/testing" element={<Shell roles={["admin_enered", "cliente_subsidio", "administrador", "logistica", "contabilidad"]}><TestingVerificacion /></Shell>} />
-          <Route path="/subsidio/documentos" element={<Shell roles={["admin_enered", "cliente_subsidio", "administrador", "logistica", "contabilidad"]}><SubsidioDocumentos /></Shell>} />
+          <Route path="/subsidio/documentos" element={<Shell roles={["admin_enered", "cliente_subsidio", "administrador", "logistica", "contabilidad"]}><SubsidioDU004Finalizado /></Shell>} />
           <Route path="/subsidio/du007" element={<Shell roles={["admin_enered", "cliente_subsidio", "administrador", "logistica", "contabilidad"]}><SubsidioDU007 /></Shell>} />
           <Route path="/dashboard-subsidio" element={<Shell roles={["admin_enered", "cliente_subsidio", "administrador", "logistica", "contabilidad"]}><DashboardSubsidioView /></Shell>} />          <Route path="/subsidio/verificar" element={<Shell roles={["cliente_subsidio"]}><SubsidioVerificar /></Shell>} />
           <Route path="/subsidio/finalizado" element={<ProtectedRoute roles={["cliente_subsidio"]}><SubsidioFinalizado /></ProtectedRoute>} />

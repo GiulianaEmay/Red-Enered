@@ -3,16 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { ShieldAlert } from "lucide-react";
 import { api } from "../lib/api";
 
-/* Son DOS declaraciones juradas distintas: la del DU 004 (una sola) y la del DU 007 (una por
-   periodo). Este aviso muestra lo que falta firmar en AMBOS decretos, esté donde esté el cliente,
-   y lo lleva a la pantalla correcta. `actual` = decreto de la página donde se muestra. */
+/* El DU 004 finalizó. El aviso dirige al DU 007: constancia compartida y una declaración
+   por periodo; las firmas históricas del DU 004 se conservan sin volver a solicitarlas. */
 /* Solo la CONSTANCIA de términos del servicio es obligatoria (Giuliana, 25/09/2026); las DJ de
    veracidad se muestran como recomendadas. La constancia se acepta en la etapa de Declaración
-   del decreto donde el cliente tiene facturas (DU 007 si solo tiene ahí). */
+   del DU 007. */
 export function rutaFirmaPendiente(f) {
-  if (!f || f.constancia) return null;
-  const soloDu007 = !(f.du004?.facturas > 0) && (f.du007?.periodos_con_facturas || []).length > 0;
-  return soloDu007 ? "/subsidio/du007?etapa=declaracion" : "/subsidio/documentos?etapa=declaracion";
+  if (!f || f.constancia || !f.tiene_facturas) return null;
+  return "/subsidio/du007?etapa=declaracion";
 }
 
 export default function FirmasPendientes({ actual, onCargado }) {
@@ -26,9 +24,8 @@ export default function FirmasPendientes({ actual, onCargado }) {
   }, []);
   if (!f) return null;
   const items = [];
-  const aquiTo = actual === "du007" ? "/subsidio/du007" : "/subsidio/documentos";
+  const aquiTo = "/subsidio/du007";
   if (!f.constancia) items.push({ k: "constancia", txt: "Constancia de términos del servicio", to: aquiTo });
-  if (f.du004?.pendiente) items.push({ k: "du004", txt: `Declaración jurada DU 004 (${f.du004.facturas} factura${f.du004.facturas === 1 ? "" : "s"} cargada${f.du004.facturas === 1 ? "" : "s"})`, to: "/subsidio/documentos" });
   for (const p of (f.du007?.periodos_pendientes || [])) items.push({ k: `du007_p${p}`, txt: `Declaración jurada DU 007 · Periodo ${p}`, to: "/subsidio/du007" });
   if (items.length === 0) return null;
   const obligatoria = !f.constancia;
