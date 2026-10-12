@@ -12,6 +12,7 @@ export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -62,14 +63,28 @@ export default function Login() {
             data-testid="login-email"
           />
         </div>
-        <div className="sp-field">
+        <div className="sp-field lg-password-field">
           <svg {...ico}><rect x="4" y="10" width="16" height="10" rx="2.5" /><path d="M8 10V7a4 4 0 018 0v3" /></svg>
           <input
-            id="lg-pass" type="password" required autoComplete="current-password"
+            id="lg-pass" type={showPassword ? "text" : "password"} required autoComplete="current-password"
+            aria-label="Contraseña"
             placeholder="Contraseña" value={password}
             onChange={(e) => setPassword(e.target.value)}
             data-testid="login-password"
           />
+          <button
+            type="button" className="lg-password-toggle"
+            onClick={() => setShowPassword((visible) => !visible)}
+            aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+            aria-controls="lg-pass" aria-pressed={showPassword}
+            title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+          >
+            <svg {...ico} aria-hidden="true">
+              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+              <circle cx="12" cy="12" r="3" />
+              {showPassword && <path d="M3 3l18 18" />}
+            </svg>
+          </button>
         </div>
 
         {error ? (
@@ -116,6 +131,11 @@ export default function Login() {
       <div className="sp-emay"><EmayFooter variant="compact" /></div>
 
       <style>{`
+.sp-field.lg-password-field input{padding-right:58px}
+.lg-password-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;width:40px;height:40px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--sp-ink-3);cursor:pointer}
+.lg-password-toggle:hover{color:var(--sp-violet-600);background:rgba(124,58,237,.06)}
+.lg-password-toggle:focus-visible{outline:2px solid var(--sp-violet-500);outline-offset:2px}
+.lg-password-toggle svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8}
 .lg-contact{font-size:12.5px;line-height:1.5;color:var(--sp-ink-2)}
 .lg-contact-data{margin-top:8px;font-size:12.5px;font-weight:600;color:var(--sp-ink)}
 .lg-contact-data a{color:var(--sp-violet-600);text-decoration:none}
