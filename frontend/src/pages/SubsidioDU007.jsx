@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { api } from "../lib/api";
+import { uploadSubsidioInvoices, invoiceUploadFailure } from "../lib/uploadSubsidioInvoices";
 import { useLocation } from "react-router-dom";
 import QrSubidaCelular from "../components/QrSubidaCelular";
 import FirmasPendientes from "../components/FirmasPendientes";
@@ -53,6 +54,7 @@ export default function SubsidioDU007() {
   const [errorVerificacion, setErrorVerificacion] = useState("");
   const [errorPeriodos, setErrorPeriodos] = useState("");
   const [subiendo, setSubiendo] = useState(false);
+  const [progresoCarga, setProgresoCarga] = useState(null);
   const [aviso, setAviso] = useState(null);
   const fileRef = useRef(null);
   const etapaElegidaRef = useRef(null);
@@ -115,22 +117,21 @@ export default function SubsidioDU007() {
     if (!files.length) return;
     setSubiendo(true); setAviso(null);
     try {
-      const fd = new FormData();
-      files.forEach((f) => fd.append("files", f));
-      fd.append("programa", "du007");
-      const { data } = await api.post("/subsidio/invoices/upload", fd, { timeout: 300000 });
-      const ok = (data.items || []).filter((x) => x.ok !== false).length;
-      const mal = (data.items || []).filter((x) => x.ok === false);
+      const result = await uploadSubsidioInvoices(files, api, setProgresoCarga);
+      const guardadas = result.items.filter((x) => x.id).length;
+      const mal = result.items.filter((x) => x.ok === false);
       setAviso({
-        tipo: mal.length ? "warn" : "ok",
-        texto: `${ok} factura${ok === 1 ? "" : "s"} cargada${ok === 1 ? "" : "s"} al DU 007.` +
-               (mal.length ? ` ${mal.length} con problema: ${mal.map((m) => m.error).join("; ")}` : ""),
+        tipo: result.error ? "err" : mal.length ? "warn" : "ok",
+        texto: `${guardadas} factura${guardadas === 1 ? "" : "s"} guardada${guardadas === 1 ? "" : "s"} al DU 007.` +
+               (mal.length ? ` ${mal.length} con problema: ${mal.map((m) => m.error || "Requiere revisión").join("; ")}` : "") +
+               (result.error ? ` ${invoiceUploadFailure(result)}` : ""),
       });
       await load();
     } catch (e) {
       setAviso({ tipo: "err", texto: e?.response?.data?.detail || "No se pudieron subir los archivos." });
     } finally {
       setSubiendo(false);
+      setProgresoCarga(null);
       if (fileRef.current) fileRef.current.value = "";
     }
   };
@@ -261,7 +262,7 @@ export default function SubsidioDU007() {
                 className="btn-brand px-5 py-3 rounded-xl text-sm font-bold flex items-center gap-2 disabled:opacity-60"
                 data-testid="du007-upload-btn">
                 {subiendo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                {subiendo ? "Leyendo facturas…" : "Subir facturas (PDF)"}
+                {subiendo ? `Leyendo factura ${progresoCarga?.current || 1} de ${progresoCarga?.total || 1}…` : "Subir facturas (PDF)"}
               </button>
               <QrSubidaCelular programa="du007" onNuevas={load} />
             </div>
