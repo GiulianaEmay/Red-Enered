@@ -9,9 +9,50 @@ import json
 import base64
 import logging
 import tempfile
+import math
+from time import monotonic
 from typing import Optional
 
 logger = logging.getLogger("enered.invoice_ocr")
+
+_gemini_retry_at = 0.0
+
+
+class OCRRateLimited(RuntimeError):
+    """Stop the batch from repeatedly calling a provider that rejected its quota."""
+    def __init__(self, retry_after: int):
+        super().__init__("El servicio de lectura automática alcanzó su límite de uso. La factura queda disponible para revisión manual.")
+        self.retry_after = retry_after
+
+
+def _is_rate_limit(error: Exception) -> bool:
+    return (
+        getattr(error, "code", None) == 429
+        or getattr(error, "status_code", None) == 429
+        or "RESOURCE_EXHAUSTED" in str(error)
+        or str(error).lstrip().startswith("429 ")
+    )
+
+
+def _retry_after(error: Exception) -> int:
+    """Use provider RetryInfo/Retry-After, with at least one minute of cooldown."""
+    delays = [60.0]
+    response = getattr(error, "response", None)
+    try:
+        delays.append(float(response.headers.get("Retry-After", 0)))
+    except (AttributeError, TypeError, ValueError):
+        pass
+    details = getattr(error, "details", {})
+    if isinstance(details, dict):
+        payload = details.get("error", details)
+        if isinstance(payload, dict):
+            for detail in payload.get("details", []) or []:
+                if isinstance(detail, dict) and str(detail.get("@type", "")).endswith("RetryInfo"):
+                    try:
+                        delays.append(float(str(detail.get("retryDelay", "")).removesuffix("s")))
+                    except ValueError:
+                        pass
+    return math.ceil(max(delay for delay in delays if math.isfinite(delay)))
 
 OCR_PROMPT = """Eres un asistente experto en extraer datos de FACTURAS ELECTRÓNICAS de COMBUSTIBLE peruanas (SUNAT).
 
@@ -182,11 +223,20 @@ async def _extract_claude(content: bytes, content_type: str) -> dict:
 
 async def _extract_gemini(content: bytes, content_type: str) -> dict:
     """Lectura con Gemini actual (SDK google-genai)."""
+    global _gemini_retry_at
+    remaining = _gemini_retry_at - monotonic()
+    if remaining > 0:
+        raise OCRRateLimited(math.ceil(remaining))
     from google import genai
     from google.genai import types as gtypes
     img, mime = _a_imagen_png(content, content_type)
     import asyncio as _aio
-    client = genai.Client(api_key=os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY"))
+    client = genai.Client(
+        api_key=os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY"),
+        http_options=gtypes.HttpOptions(
+            timeout=30000, retry_options=gtypes.HttpRetryOptions(attempts=1),
+        ),
+    )
     # Google retira modelos y satura otros ("high demand" 503): probamos varios en orden, con un
     # reintento corto cada uno. El primero es configurable (GEMINI_VISION_MODEL).
     candidatos = [m.strip() for m in (os.environ.get("GEMINI_VISION_MODEL") or "").split(",") if m.strip()]
@@ -194,26 +244,32 @@ async def _extract_gemini(content: bytes, content_type: str) -> dict:
         if m not in candidatos:
             candidatos.append(m)
     ultimo_error = None
-    for modelo in candidatos:
-        for intento in (1, 2):
-            try:
-                resp = await client.aio.models.generate_content(
-                    model=modelo,
-                    contents=[gtypes.Part.from_bytes(data=img, mime_type=mime), OCR_PROMPT],
-                    config=gtypes.GenerateContentConfig(temperature=0, response_mime_type="application/json",
-                                                        system_instruction="Eres un OCR estructurado. Solo devuelves JSON válido sin markdown."),
-                )
-                text = resp.text or ""
-                return {"extracted": _normalize_fields(_parsear_json(text)), "raw_response": text, "motor": f"gemini:{modelo}"}
-            except Exception as e:
-                ultimo_error = e
-                msg = str(e)
-                transitorio = any(c in msg for c in ("503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED", "500", "timeout", "Timeout"))
-                logger.warning(f"Gemini {modelo} intento {intento} falló: {msg[:160]}")
-                if transitorio and intento == 1:
-                    await _aio.sleep(2)
-                    continue
-                break  # modelo retirado / no disponible → siguiente candidato
+    async with client.aio as async_client:
+        for modelo in candidatos:
+            for intento in (1, 2):
+                try:
+                    resp = await async_client.models.generate_content(
+                        model=modelo,
+                        contents=[gtypes.Part.from_bytes(data=img, mime_type=mime), OCR_PROMPT],
+                        config=gtypes.GenerateContentConfig(temperature=0, response_mime_type="application/json",
+                                                            system_instruction="Eres un OCR estructurado. Solo devuelves JSON válido sin markdown."),
+                    )
+                    text = resp.text or ""
+                    return {"extracted": _normalize_fields(_parsear_json(text)), "raw_response": text, "motor": f"gemini:{modelo}"}
+                except Exception as e:
+                    if _is_rate_limit(e):
+                        delay = _retry_after(e)
+                        _gemini_retry_at = monotonic() + delay
+                        logger.warning("Gemini alcanzó su límite (429); lectura pausada %s segundos, sin cambiar de modelo.", delay)
+                        raise OCRRateLimited(delay) from e
+                    ultimo_error = e
+                    msg = str(e)
+                    transitorio = any(c in msg for c in ("503", "UNAVAILABLE", "500", "timeout", "Timeout"))
+                    logger.warning(f"Gemini {modelo} intento {intento} falló: {msg[:160]}")
+                    if transitorio and intento == 1:
+                        await _aio.sleep(2)
+                        continue
+                    break  # modelo retirado / no disponible → siguiente candidato
     raise RuntimeError(f"Gemini sin respuesta en {len(candidatos)} modelos; último error: {ultimo_error}")
 
 
@@ -225,6 +281,12 @@ async def extract_invoice_data(content: bytes, content_type: str, session_id: st
     if prov in ("claude", "gemini"):
         try:
             return await (_extract_claude if prov == "claude" else _extract_gemini)(content, content_type)
+        except OCRRateLimited as e:
+            return {
+                "extracted": _normalize_fields({}), "raw_response": f"{prov}: {e}",
+                "motor": prov, "error_code": "rate_limited",
+                "error_message": str(e), "retry_after": e.retry_after,
+            }
         except Exception as e:
             logger.warning(f"OCR {prov} falló: {e}")
             return {"extracted": _normalize_fields({}), "raw_response": f"{prov}: {e}", "motor": prov}

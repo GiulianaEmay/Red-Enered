@@ -58,7 +58,7 @@ export default function CapturaMovil() {
       fotos.forEach((f, i) => fd.append("files", f.file, f.file.name || `foto-${i + 1}.jpg`));
       const { data } = await api.post(`/captura/${token}/fotos`, fd, { timeout: 300000 });
       setResultados((p) => [...(data.items || []), ...p]);
-      setUltimoEnvio((data.items || []).length);
+      setUltimoEnvio((data.items || []).filter((r) => r.id).length);
       setFotos([]);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e) {
@@ -165,7 +165,12 @@ export default function CapturaMovil() {
                         <div className="text-xs text-neutral-500">{r.placa || "sin placa"} · {r.galones ?? "—"} gal · {r.fecha || "sin fecha"}</div>
                         {(() => {
                           const faltan = [!r.numero && "número", !r.fecha && "fecha", !r.placa && "placa", (r.galones == null) && "galones", (r.importe == null) && "importe"].filter(Boolean);
-                          return faltan.length > 0 ? (
+                          return r.error_code === "rate_limited" ? (
+                            <div className="mt-1 text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
+                              El servicio de lectura automática alcanzó su límite. Tu factura quedó guardada;
+                              revisa o completa los datos en la computadora. No necesitas volver a tomar la foto por este aviso.
+                            </div>
+                          ) : faltan.length > 0 ? (
                             <div className="mt-1 text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
                               No se pudo leer: <b>{faltan.join(", ")}</b>. Toma otra foto más cerca, sin sombra y con toda la factura, o corrígelo luego en la computadora.
                             </div>

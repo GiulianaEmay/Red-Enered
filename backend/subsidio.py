@@ -2399,6 +2399,7 @@ async def invoices_upload(
             logger.warning(f"Extracción QR/XML falló en {f.filename}: {_e}")
             base = {}
 
+        ocr_error_code, ocr_retry_after = None, None
         try:
             if is_pdf:
                 ocr = await _extract_pdf_text(content, content_type, session_id=_sid)
@@ -2414,6 +2415,8 @@ async def invoices_upload(
                 ocr = await _extract_vision(content, content_type, session_id=_sid)
             extracted = ocr["extracted"]
             raw_resp = ocr["raw_response"]
+            ocr_error_code = ocr.get("error_code")
+            ocr_retry_after = ocr.get("retry_after")
             ocr_ok = True
             ocr_error = None
             # El motor de visión no lanza: si devolvió vacío y reporta el fallo en raw_response,
@@ -2421,7 +2424,7 @@ async def invoices_upload(
             _prov_err = str(raw_resp or "").strip()
             if not any(extracted.get(k) for k in ("numero_documento", "galones", "importe_total", "placa")) \
                     and _prov_err[:8].lower() in ("claude: ", "gemini: ", "legacy: "):
-                ocr_ok, ocr_error = False, _prov_err[:200]
+                ocr_ok, ocr_error = False, ocr.get("error_message") or _prov_err[:200]
         except Exception as e:
             logger.warning(f"OCR error en {f.filename}: {e}")
             extracted, raw_resp, ocr_ok, ocr_error = {}, "", False, str(e)[:200]
@@ -2486,6 +2489,8 @@ async def invoices_upload(
               "raw_ocr_response": raw_resp,
               "ocr_ok": ocr_ok,
               "ocr_error": ocr_error,
+              "ocr_error_code": ocr_error_code if not ocr_ok else None,
+              "ocr_retry_after": ocr_retry_after if not ocr_ok else None,
               "placa_match": placa_match,  # placa que coincide con flota, si la hubo
               "status": "draft",  # draft → confirmed
               "created_at": datetime.now(timezone.utc).isoformat(),
@@ -2922,6 +2927,8 @@ async def captura_fotos(token: str, files: List[UploadFile] = File(...)):
     for r in res.get("items", []):
         d = r.get("data") or {}
         items.append({"id": r.get("id"), "archivo": r.get("filename"), "ok": bool(r.get("ok")),
+                      "guardada": bool(r.get("id")), "error": r.get("error"),
+                      "error_code": d.get("ocr_error_code"),
                       "numero": d.get("numero_documento"), "placa": d.get("placa"),
                       "galones": d.get("galones"), "importe": d.get("importe_total"),
                       "estado": d.get("validacion_estado"), "fecha": d.get("fecha"),
